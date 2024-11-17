@@ -44,14 +44,6 @@ resource "aws_eip" "nat_1" {
 	}
 }
 
-resource "aws_eip" "nat_2" {
-	domain = "vpc"
-	
-	lifecycle {
-		create_before_destroy = true
-	}
-}
-
 resource "aws_nat_gateway" "nat_gateway_1" {
 	allocation_id = aws_eip.nat_1.id
 
@@ -62,12 +54,39 @@ resource "aws_nat_gateway" "nat_gateway_1" {
 	}
 }
 
-resource "aws_nat_gateway" "nat_gateway_2" {
-	allocation_id = aws_eip.nat_2.id
+resource "aws_route_table" "public_route" {
+	vpc_id = aws_vpc.main.id
 
-	subnet_id = aws_subnet.second_subnet.id
+	route {
+		cidr_block = "0.0.0.0/0"
+		gateway_id = aws_internet_gateway.igw.id
+	}
 
 	tags = {
-		Name = "NAT-GW-2"
+		Name = "public_route_table"
 	}
+}
+
+resource "aws_route_table" "private_route" {
+	vpc_id = aws_vpc.main.id
+
+	tags = {
+		Name = "private_route_table"
+	}
+}
+
+resource "aws_route_table_association" "public_route_table_association" {
+	subnet_id = aws_subnet.first_subnet.id
+	route_table_id = aws_route_table.public_route.id
+}
+
+resource "aws_route_table_association" "private_route_table_association" {
+	subnet_id = aws_subnet.second_subnet.id
+	route_table_id = aws_route_table.private_route.id
+}
+
+resource "aws_route" "private_nat" {
+	route_table_id 	= aws_route_table.private_route.id
+	destination_cidr_block = "0.0.0.0/0"
+	nat_gateway_id	= aws_nat_gateway.nat_gateway_1.id
 }
