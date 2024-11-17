@@ -90,3 +90,13 @@ resource "aws_route" "private_nat" {
 	destination_cidr_block = "0.0.0.0/0"
 	nat_gateway_id	= aws_nat_gateway.nat_gateway_1.id
 }
+
+resource "aws_vpc_endpoint" "s3" {
+	vpc_id = aws_vpc.main.id
+	service_name = "com.amazonaws.ap-northeast-2.s3"
+}
+
+resource "aws_vpc_endpoint_route_table_association" "vpc_test" {
+	route_table_id = aws_route_table.private_route.id
+	vpc_endpoint_id = aws_vpc_endpoint.s3.id
+}
